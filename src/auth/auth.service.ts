@@ -24,13 +24,13 @@ export class AuthService {
           email: dto.email,
           hash,
         },
-      })
+      });
 
       return this.signToken(user.id, user.email);
     } catch (error) {
-      if(error instanceof PrismaClientKnownRequestError) {
+      if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new ForbiddenException('Credentials already taken')
+          throw new ForbiddenException('Credentials already taken');
         }
       }
     }
@@ -40,24 +40,28 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: {
         email: dto.email,
-      }
-    })
+      },
+    });
 
     if (!user) throw new ForbiddenException('Credentials incorrect');
 
     const isPasswordMatch = await argon.verify(user.hash, dto.password);
 
-    if(!isPasswordMatch) throw new ForbiddenException('Credentials does not match');
+    if (!isPasswordMatch)
+      throw new ForbiddenException('Credentials does not match');
 
     return this.signToken(user.id, user.email);
   }
 
-  async signToken(userId: number, email: string): Promise<{ access_token: string }> {
+  async signToken(
+    userId: number,
+    email: string,
+  ): Promise<{ access_token: string }> {
     const payload = {
       sub: userId,
       email,
-    }
-    
+    };
+
     const token = await this.jwt.signAsync(payload, {
       expiresIn: '15m',
       secret: this.config.get('JWT_SECRET'),
@@ -65,6 +69,6 @@ export class AuthService {
 
     return {
       access_token: token,
-    }
+    };
   }
 }
